@@ -1,0 +1,79 @@
+<html>
+
+<head>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" type="text/css" href="../css/editEmployee.css">
+</head>
+
+<body onload="getData()">
+    <div class="container">
+        <div class="form-container">
+            <form>
+                <!-- Input fields for employee's first and last name -->
+                First Name: <input id="fName" type="text" /><br />
+                Last Name: <input id="lName" type="text" /><br />
+                <!-- Dropdown for selecting department -->
+                Department: <select id="selectDepartment"></select>
+            </form>
+            <!-- Buttons for add and cancel actions -->
+            <button type="button" onclick="add()">ADD</button>
+            <button type="button" onclick="cancel()">CANCEL</button>
+        </div>
+    </div>
+    
+    <script>
+        async function getData() {
+            // Fetch department data
+            const response = await fetch("http://localhost:8000/departments");
+            const departmentsList = await response.json();
+            const selectDepartment = document.getElementById("selectDepartment");
+            // Populate department dropdown
+            departmentsList.forEach(dep => {
+                const option = document.createElement("option");
+                option.value = dep.name;
+                option.text = dep.name;
+                selectDepartment.appendChild(option);
+            });
+            selectDepartment.value = "select"
+        }
+
+        async function add() {
+            const id = ({ id: sessionStorage["id"] })
+            const response = await fetch(`http://localhost:8000/actions/${id.id}`)
+            const data = await response.json();
+            if (response.status == 200) {
+                const fName = document.getElementById("fName").value
+                const lName = document.getElementById("lName").value
+                const resp = await fetch("http://localhost:8000/departments")
+                const departmentsList = await resp.json()
+                const department = departmentsList.find(dep => dep.name == document.getElementById("selectDepartment").value);
+                const departmentID = department ? department._id : null;
+
+                // Ensure starting year is a valid value
+                const startingYear = new Date().getFullYear();
+                const newItem = JSON.stringify({ "first name": fName, "last name": lName, "starting year": startingYear, departmentID: departmentID });
+
+                // Add new employee
+                const response = await fetch(`http://localhost:8000/employees`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: newItem
+                });
+                if (response.status === 400) {
+                    alert("Please enter valid data");
+                }
+                if (response.status === 200) {
+                    window.location.href = sessionStorage.getItem("window.location");
+                }
+            } else {
+                alert(data);
+            }
+        }
+
+        function cancel() {
+            window.location.href = sessionStorage.getItem("window.location");
+        }
+    </script>
+</body>
+
+</html>

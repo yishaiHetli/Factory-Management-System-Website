@@ -1,0 +1,158 @@
+<html>
+
+<head>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" type="text/css" href="../css/editEmployee.css">
+</head>
+
+<body onload="getData()">
+    <!-- Container for the form -->
+    <div class="container">
+        <div class="form-container">
+            <form>
+                <!-- Input fields for employee details -->
+                First Name: <input id="fName" type="text" /><br />
+                Last Name: <input id="lName" type="text" /><br />
+                Department: <select id="selectDepartment"></select><br />
+                Shift: <select id="selectShift"></select>
+            </form>
+            <div class="button-container">
+                <!-- Buttons for update, cancel, and delete actions -->
+                <button onclick="update()">UPDATE</button>
+                <button onclick="cancel()">CANCEL</button>
+                <button type="button" onclick="deleteEmployee()">DELETE</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Function to get employee data and populate the form
+        async function getData() {
+            
+            // Fetch departments and shifts
+            const response = await fetch("http://localhost:8000/departments");
+            const resp = await fetch("http://localhost:8000/shifts");
+            const departmentsList = await response.json();
+            const shiftList = await resp.json();
+
+            // Populate the department dropdown
+            const selectDepartment = document.getElementById("selectDepartment");
+            departmentsList.forEach(dep => {
+                const option = document.createElement("option");
+                option.value = dep.name;
+                option.text = dep.name;
+                selectDepartment.appendChild(option);
+            });
+
+            // Populate the shift dropdown
+            const selectShift = document.getElementById("selectShift");
+            shiftList.forEach(shift => {
+                const option = document.createElement("option");
+                option.value = `${shift["starting hour"]}:00-${shift["ending hour"]}:00`;
+                option.text = `${shift["starting hour"]}:00-${shift["ending hour"]}:00`;
+                selectShift.appendChild(option);
+            });
+
+            // Set the form values based on the stored employee data
+            const employeeData = JSON.parse(sessionStorage.getItem("employeeData"));
+            document.getElementById("fName").value = employeeData["first name"];
+            document.getElementById("lName").value = employeeData["last name"];
+            selectDepartment.value = departmentsList.find(dep => dep._id == employeeData.departmentID).name;
+            const shift = shiftList.find(shift => shift._id == employeeData["assignment"]?.["shiftId"] || "Not assigned");
+            selectShift.value = `${shift?.["starting hour"]}:00-${shift?.["ending hour"]}:00`;
+        }
+
+        // Function to update employee details
+        async function update() {
+            const id = ({ id: sessionStorage["id"] });
+            const response = await fetch(`http://localhost:8000/actions/${id.id}`);
+            const data = await response.json();
+            if (response.status == 200) {
+                const fname = document.getElementById("fName").value;
+                const lName = document.getElementById("lName").value;
+                
+                // Fetch shifts and departments
+                const response = await fetch("http://localhost:8000/shifts");
+                const resp = await fetch("http://localhost:8000/departments");
+                const shiftList = await response.json();
+                const departmentsList = await resp.json();
+
+                // Get department and shift IDs
+                const departmentID = departmentsList.find(dep => dep.name == document.getElementById("selectDepartment").value);
+                const shiftID = shiftList.find(shift => `${shift["starting hour"]}:00-${shift["ending hour"]}:00` == document.getElementById("selectShift").value);
+                
+                // Prepare employee update data
+                const employeeData = JSON.parse(sessionStorage.getItem("employeeData"));
+                const assignmentId = employeeData["assignment"]?.["_id"] || "Not assigned";
+                const employeeId = employeeData._id;
+                const newItem = JSON.stringify({
+                    "first name": fname,
+                    "last name": lName,
+                    "start work year": JSON.stringify(new Date().getFullYear()),
+                    departmentID: departmentID?._id
+                });
+
+                // Send PUT request to update employee details
+                const response2 = await fetch(`http://localhost:8000/employees/${employeeId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: newItem
+                });
+
+                // Update assignment if necessary
+                if (assignmentId == "Not assigned") {
+                    const body = JSON.stringify({ shiftId: shiftID._id, employeeId: employeeData["_id"] });
+                    await fetch(`http://localhost:8000/assignments`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: body
+                    });
+                } else {
+                    const body = JSON.stringify({ shiftId: shiftID._id });
+                    await fetch(`http://localhost:8000/assignments/${assignmentId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: body
+                    });
+                }
+
+                // Handle response status
+                if (response2.status === 400) {
+                    alert("Please enter valid data.");
+                } else if (response2.status === 200) {
+                    window.location.href = sessionStorage.getItem("window.location");
+                } 
+            } else {
+                alert(data);
+            }
+        }
+
+        // Function to delete employee
+        async function deleteEmployee() {
+            const employeeData = JSON.parse(sessionStorage.getItem("employeeData"));
+            const assignmentId = employeeData["assignment"]["_id"];
+            const employeeId = employeeData._id;
+
+            // Send DELETE request to remove employee assignment
+            await fetch(`http://localhost:8000/assignments/${assignmentId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+            });
+
+            // Send DELETE request to remove employee
+            await fetch(`http://localhost:8000/employees/${employeeId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+            });
+
+            // Redirect back to the employees page
+            window.location.href = sessionStorage.getItem("window.location");
+        }
+
+        // Function to cancel and navigate back to the employees page
+        function cancel() {
+            window.location.href = sessionStorage.getItem("window.location");
+        }
+    </script>
+</body>
+
+</html>

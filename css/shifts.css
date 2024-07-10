@@ -1,0 +1,100 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+button {
+    position: relative;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    /* margin-left: 153px; */
+    margin-top: 10px;
+    align-self: center;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+#tbl {
+    width: 80%;
+    margin: 20px auto;
+    margin-bottom: 5px;
+    border-collapse: collapse;
+    border: 1px solid #ccc;
+    background-color: white;
+}
+
+th,
+td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    text-align: justify;
+    background-color: #333;
+    color: white;
+    position: relative;
+    width: 30%;
+}
+
+a {
+    text-decoration: none;
+    color: #007bff;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.table-container {
+    width: 100%;
+    margin: 20px auto;
+    background-color: white;
+}
+
+.add-button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    background-color: #2889a7;
+    color: white;
+    cursor: pointer;
+}
+
+.add-button:hove r {
+    background-color: #218888;
+}
+
+#tblBody {
+    display: contents;
+    width: 30%;
+    height: 150%;
+    padding: 4px;
+}
+
+.scrollable-tblBody2 {
+    display: block;
+    max-height: 100px; /* Adjust the height as needed */
+    overflow-y: auto;
+    width: 100%;
+    height: 150%;
+    border: 1px solid #ccc; /* Add border to match table styling */
+    padding: 0px; /* Add padding to match table styling */
+    box-sizing: content-box; /* Ensure padding and border are included in the total width/height */
+}
+
+.scrollable-tblBody2 tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}

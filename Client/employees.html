@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" type="text/css" href="../css/classic.css">
+</head>
+
+<body onload="checkUctions()">
+    <!-- Table to display employees -->
+    <table id="tbl">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Shifts</th>
+            </tr>
+        </thead>
+        <tbody id="tblBody">
+            <!-- Table body will be populated dynamically -->
+        </tbody>
+    </table>
+    <!-- Button to add a new employee -->
+    <button onclick="add()">NEW</button>
+    
+    <script>
+        // Function to check some conditions and fetch data accordingly
+        async function checkUctions() {
+            // Create a request body with the session id
+            const body = JSON.stringify({ id: sessionStorage["id"] });
+            // Check if the current page is not employee.html so the action will not be counted if so
+            if (sessionStorage.getItem("window.location") !== '///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/employee.html') {
+                const id = ({ id: sessionStorage["id"] });
+                // Fetch actions data based on the session id
+                const response = await fetch(`http://localhost:8000/actions/${id.id}`);
+                const data = await response.json();
+                // If response is successful, call getData to fetch and display employee data
+                if (response.status == 200) {
+                    getData();
+                } else {
+                    alert(data);
+                }
+            } else {
+                // If the current page is employee.html, directly call getData
+                getData();
+            }
+        }
+
+        // Function to fetch and display employee data
+        async function getData() {
+            // Fetch data from various endpoints
+            const empResponse = await fetch("http://localhost:8000/employees");
+            const depResponse = await fetch("http://localhost:8000/departments");
+            const assignResponce = await fetch("http://localhost:8000/assignments");
+            const shifResponce = await fetch("http://localhost:8000/shifts");
+            
+            // Parse JSON data from the responses
+            const departments = await depResponse.json();
+            const employees = await empResponse.json();
+            const shiftsList = await shifResponce.json();
+            const assignments = await assignResponce.json();
+            
+            // Get reference to the table body
+            const employeesTable = document.getElementById("tblBody");
+
+            // Iterate over each employee
+            employees.forEach(employee => {
+                // Create new table row and cells for name, department, and shift
+                const newTr = document.createElement("tr");
+                const name = document.createElement("td");
+                const department = document.createElement("td");
+                const shift = document.createElement("td");
+
+                // Create a link with the employee's name
+                const link = document.createElement("a");
+                link.innerText = `${employee['first name']} ${employee['last name']}`;
+                // Add click event listener to store employee data in session storage
+                link.addEventListener("click", () => {
+                    sessionStorage.setItem("employeeData", JSON.stringify(employee));
+                });
+                // Set the link href to the edit employee page
+                link.href = "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/editEmployee.html";
+                // Store the current page in session storage
+                sessionStorage.setItem("window.location", "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/employees.html");
+
+                // Append the link to the name cell
+                name.appendChild(link);
+                // Find and set the employee's department name or "Not assigned"
+                department.innerText = (departments.find(dep => employee.departmentID == dep._id))?.name || "Not assigned";
+                // Find the shift id for the employee from assignments
+                const shiftId = assignments.find((as) => as.employeeId == employee._id)?.shiftId;
+                // Find the shift details based on shift id
+                const employeeShift = shiftsList.find((shift) => shift._id == shiftId);
+                const shiftStart = employeeShift ? employeeShift["starting hour"] : "Not assigned";
+                const shiftEnd = employeeShift ? employeeShift["ending hour"] : "Not assigned";
+                // Set the shift cell text
+                shift.innerText = shiftStart == "Not assigned" ? "Not assigned" : `${shiftStart}-${shiftEnd}`;
+                
+                // Append cells to the row
+                newTr.appendChild(name);
+                newTr.appendChild(department);
+                newTr.appendChild(shift);
+
+                // Append the row to the table body
+                employeesTable.appendChild(newTr);
+            });
+        }
+
+        // Function to navigate to the add employee page
+        function add() {
+            window.location.href = "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/addEmployee.html";
+        }
+    </script>
+</body>
+
+</html>

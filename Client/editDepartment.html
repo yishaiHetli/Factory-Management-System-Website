@@ -1,0 +1,203 @@
+<html>
+
+<head>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" type="text/css" href="../css/editDepartment.css">
+</head>
+
+<body onload="getData()">
+    <!-- Container for the form -->
+    <div class="container">
+        <div class="form-container">
+            <form>
+                <!-- Input field for department name -->
+                Name: <input id="name" type="text" /><br />
+                <!-- Dropdown for selecting manager -->
+                Manager: <select id="selectManager" style="width: max-content;">
+                </select><br />
+                <!-- Table to display employees -->
+                Employees:
+                <div class="table-container">
+                    <table id="tbl" style="width: 100%">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblBody">
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+            <!-- Buttons for update, cancel, and delete actions -->
+            <button type="button" onclick="update()">UPDATE</button>
+            <button type="button" onclick="cancel()">CANCEL</button>
+            <button type="button" onclick="deleteDepartment()">DELETE</button>
+        </div>
+    </div>
+
+    <script>
+        async function getData() {
+            sessionStorage.setItem("window.location", "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/departments.html")
+            const departmentData = JSON.parse(sessionStorage.getItem("departmentData"))
+            const departmentId = departmentData._id
+            const response = await fetch("http://localhost:8000/employees")
+            const employeesList = await response.json()
+            const selectManager = document.getElementById("selectManager")
+            const employeesInDepartment = employeesList.filter((emp) => emp.departmentID == departmentId)
+
+            // Populate manager dropdown
+            if (employeesInDepartment.length > 0) {
+                employeesInDepartment.forEach(employee => {
+                    const option = document.createElement("option")
+                    if (`${employee['first name']} ${employee['last name']}` == departmentData["manager"]) option.selected = "selected"
+                    option.value = `${employee['first name']} ${employee['last name']}`
+                    option.innerText = `${employee['first name']} ${employee['last name']}`
+                    selectManager.appendChild(option)
+                })
+            } else {
+                const option = document.createElement("option")
+                option.value = "Not assigned"
+                option.innerText = "Not assigned"
+                selectManager.appendChild(option)
+            }
+
+            const tblBody = document.getElementById("tblBody");
+            let selectedEmployees = []
+            let selectedEmployeesNames = []
+            sessionStorage.setItem("selectedEmployees", JSON.stringify(selectedEmployees))
+            sessionStorage.setItem("selectedEmployeesNames", JSON.stringify(selectedEmployeesNames))
+
+            // Populate employee table
+            employeesList.filter((emp) => emp.departmentID !== departmentId).forEach(employee => {
+                const newTr = document.createElement("tr");
+                const addButton = document.createElement("button");
+                addButton.classList.add("add-button");
+                addButton.innerText = "ADD";
+                addButton._id = employee._id
+                addButton.onclick = (event) => {
+                    event.preventDefault()
+                    if (addButton.innerText == 'ADD') {
+                        selectedEmployees.push(employee._id);
+                        selectedEmployeesNames.push(`${employee['first name']} ${employee['last name']}`)
+                        sessionStorage.setItem("selectedEmployees", JSON.stringify(selectedEmployees))
+                        sessionStorage.setItem("selectedEmployeesNames", JSON.stringify(selectedEmployeesNames))
+                        addButton.innerText = 'CANCEL'
+                    } else {
+                        selectedEmployees = selectedEmployees.filter((emp) => emp != employee._id)
+                        selectedEmployeesNames = selectedEmployeesNames.filter((name) =>
+                            name != `${employee['first name']} ${employee['last name']}`)
+                        sessionStorage.setItem("selectedEmployees", JSON.stringify(selectedEmployees))
+                        sessionStorage.setItem("selectedEmployeesNames", JSON.stringify(selectedEmployeesNames))
+                        addButton.innerText = 'ADD'
+                    }
+                };
+
+                const addTd = document.createElement("td");
+                addTd.appendChild(addButton);
+
+                const nameTd = document.createElement("td");
+                nameTd.innerText = `${employee['first name']} ${employee['last name']}`;
+
+                newTr.appendChild(nameTd);
+                newTr.appendChild(addTd);
+                tblBody.appendChild(newTr);
+            });
+
+            document.getElementById("name").value = departmentData.name
+        }
+
+        async function update() {
+            const id = ({ id: sessionStorage["id"] })
+            const response = await fetch(`http://localhost:8000/actions/${id.id}`)
+            const data = await response.json();
+            const response2 = await fetch("http://localhost:8000/departments")
+            const departmentsList = await response2.json()
+            const selectedEmployeesNames = JSON.parse(sessionStorage.getItem("selectedEmployeesNames"))
+
+            // Ensure managers are not assigned to multiple departments
+            departmentsList.forEach(async department => {
+                const isManager = selectedEmployeesNames?.find(emp => emp == department.manager)
+                if (isManager) {
+                    let newItem = JSON.stringify({ manager: "Not assigned" })
+                    await fetch(`http://localhost:8000/departments/${department._id}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: newItem
+                    })
+                }
+            })
+
+            if (response.status == 200) {
+                const newManager = document.getElementById('selectManager').value
+                const newName = document.getElementById('name').value
+                const departmentId = JSON.parse(sessionStorage.getItem("departmentData"))._id
+                const selectedEmployees = JSON.parse(sessionStorage.getItem("selectedEmployees")) || [];
+
+                // Update employees to the current department
+                let newItem = JSON.stringify({ departmentID: departmentId })
+                selectedEmployees.forEach(async (employee) => {
+                    await fetch(`http://localhost:8000/employees/${employee}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: newItem
+                    })
+                });
+
+                // Update department details
+                newItem = JSON.stringify({ name: newName, manager: newManager })
+                if (newManager == "Not assigned") {
+                    newItem = JSON.stringify({ name: newName, manager: "Not assigned" })
+                }
+
+                const resp = await fetch(`http://localhost:8000/departments/${departmentId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: newItem
+                })
+
+                if (resp.status !== 200) {
+                    window.location.href = sessionStorage.getItem("window.location")
+                    alert("problem!!")
+                } else {
+                    window.location.href = sessionStorage.getItem("window.location")
+                }
+            } else {
+                alert(data)
+            }
+        }
+
+        async function deleteDepartment() {
+            const departmentData = JSON.parse(sessionStorage.getItem("departmentData"))
+            const departmentId = departmentData["_id"]
+
+            const response = await fetch("http://localhost:8000/employees")
+            const employeesList = await response.json()
+            const body = JSON.stringify({ departmentID: 0 })
+
+            // Remove department ID from all employees in this department
+            employeesList.filter((emp) => emp.departmentID == departmentId).forEach(async employee => {
+                await fetch(`http://localhost:8000/employees/${employee._id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: body
+                });
+            })
+
+            // Delete the department
+            await fetch(`http://localhost:8000/departments/${departmentId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+            });
+
+            window.location.href = sessionStorage.getItem("window.location");
+        }
+
+        function cancel() {
+            window.location.href = sessionStorage.getItem("window.location");
+        }
+    </script>
+</body>
+
+</html>

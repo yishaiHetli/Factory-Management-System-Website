@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        h4 {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        nav {
+            background-color: #333;
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        nav a:hover {
+            background-color: #555;
+        }
+
+        iframe {
+            width: 100%;
+            height: calc(100vh - 50px); 
+            border: none;
+        }
+    </style>
+</head>
+
+<body onload="setName()">
+    <h4 id="name"></h4>
+    <div>
+        <nav>
+            <a onclick="loadPage('file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/employees.html')">Employees</a>
+            <a onclick="loadPage('file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/shifts.html')">Shifts</a>
+            <a onclick="loadPage('file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/departments.html')">Departments</a>
+            <a onclick="loadPage('file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/users.html')">Users</a> 
+        </nav>
+    </div>
+    <iframe id="contentFrame"></iframe>
+
+    <script>
+        function setName() {
+            document.getElementById("name").append(sessionStorage["name"]);
+        }
+
+        function loadPage(url) {
+            document.getElementById('contentFrame').src = url;
+        }
+    </script>
+</body>
+
+</html>

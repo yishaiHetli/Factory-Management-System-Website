@@ -1,0 +1,87 @@
+<html>
+
+<head>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" type="text/css" href="../css/editShift.css">
+</head>
+
+<body onload="getData()">
+    <!-- Container for the form -->
+    <div class="container">
+        <div class="form-container">
+            <form>
+                <!-- Input for starting time -->
+                <label for="starting">Starting:</label><br />
+                <input id="starting" type="time" style="width: max-content;" /><br />
+                <!-- Input for ending time -->
+                <label for="ending">Ending:</label><br />
+                <input id="ending" type="time" style="width: max-content;" /><br />
+            </form>
+            <!-- Button to update shift -->
+            <button type="button" onclick="update()">UPDATE</button>
+            <!-- Button to cancel and go back -->
+            <button type="button" onclick="cancel()">CANCEL</button>
+        </div>
+    </div>
+
+    <script>
+        // Function to get shift data from session storage and populate the form
+        async function getData() {
+            sessionStorage.setItem("window.location", "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/shifts.html");
+            const shiftData = JSON.parse(sessionStorage.getItem("shiftData"));
+            document.getElementById("starting").value = shiftData["starting hour"];
+            document.getElementById("ending").value = shiftData["ending hour"];
+        }
+
+        // Function to update shift data
+        async function update() {
+            const shiftData = JSON.parse(sessionStorage.getItem("shiftData"));
+            const shiftId = shiftData._id;
+            const id = ({ id: sessionStorage["id"] });
+            const response = await fetch(`http://localhost:8000/actions/${id.id}`);
+            const data = await response.json();
+            if (response.status == 200) {
+                const starting = document.getElementById('starting').value;
+                const ending = document.getElementById('ending').value;
+                let newItem = JSON.stringify({ "starting hour": starting, "ending hour": ending });
+
+                // PUT request to update shift data
+                const resp = await fetch(`http://localhost:8000/shifts/${shiftId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: newItem
+                });
+                const status = await resp.json();
+                if (resp.status !== 200) {
+                    window.location.href = sessionStorage.getItem("window.location");
+                    alert("problem!!");
+                }
+                if (response.status === 200) {
+                    window.location.href = sessionStorage.getItem("window.location");
+                }
+            } else {
+                alert(data);
+            }
+        }
+
+        // Function to delete shift
+        async function deleteDepartment() {
+            const shiftData = JSON.parse(sessionStorage.getItem("shiftData"));
+            const shiftId = shiftData._id;
+
+            await fetch(`http://localhost:8000/shifts/${shiftId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+            });
+
+            window.location.href = sessionStorage.getItem("window.location");
+        }
+
+        // Function to cancel and navigate back
+        function cancel() {
+            window.location.href = sessionStorage.getItem("window.location");
+        }
+    </script>
+</body>
+
+</html>

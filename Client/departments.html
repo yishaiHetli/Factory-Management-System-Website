@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- Define the head section with the link to the external CSS file -->
+    <link rel="stylesheet" type="text/css" href="../css/classic.css">
+</head>
+
+<body onload="checkUctions()">
+    <!-- Table to display departments -->
+    <table id="tbl">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Manager</th>
+                <th>Employees</th>
+            </tr>
+        </thead>
+        <tbody id="tblBody">
+            <!-- Table body will be populated dynamically -->
+        </tbody>
+    </table>
+    <!-- Button to add a new department -->
+    <button onclick="add()">NEW</button>
+    <script>
+        // Function to check some conditions and fetch data accordingly
+        async function checkUctions() {
+            // Check if the current page is not departments.html so the action will not be counted if so
+            if (sessionStorage.getItem("window.location") !== '///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/departments.html') {
+                // Set the current page in session storage
+                sessionStorage.setItem("window.location", "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/departments.html");
+                const id = ({ id: sessionStorage["id"] });
+                // Fetch actions data based on the session id
+                const response = await fetch(`http://localhost:8000/actions/${id.id}`);
+                const data = await response.json();
+                // If response is successful, call getData to fetch and display department data
+                if (response.status == 200) {
+                    getData();
+                } else {
+                    alert(data);
+                }
+            } else {
+                // If the current page is departments.html, directly call getData
+                getData();
+            }
+        }
+
+        // Function to fetch and display department data
+        async function getData() {
+            // Fetch data from departments and employees endpoints
+            const response = await fetch("http://localhost:8000/departments");
+            const resp = await fetch("http://localhost:8000/employees");
+            const employees = await resp.json();
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const departments = await response.json();
+            const departmentsTable = document.getElementById("tblBody");
+
+            // Iterate over each department
+            departments.forEach(department => {
+                // Create new table row and cells for name, manager, and employees
+                const newTr = document.createElement("tr");
+                const name = document.createElement("td");
+                const manager = document.createElement("td");
+                const employeesList = document.createElement("td");
+                const departmentLink = document.createElement("a");
+
+                // Create a link with the department's name
+                departmentLink.innerText = department.name;
+                // Add click event listener to store department data in session storage
+                departmentLink.addEventListener("click", () => {
+                    sessionStorage.setItem("departmentData", JSON.stringify(department));
+                });
+                // Set the link href to the edit department page
+                departmentLink.href = "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/editDepartment.html";
+                // Append the link to the name cell
+                name.appendChild(departmentLink);
+                // Set the manager cell text
+                manager.innerText = department.manager;
+
+                // Filter employees belonging to the current department
+                const departmentEmployees = employees.filter(emp => emp.departmentID == department._id);
+
+                // Iterate over each employee in the department
+                departmentEmployees.forEach(emp => {
+                    const employeeRow = document.createElement("div");
+                    const employeeLink = document.createElement("a");
+                    // Create a link with the employee's name
+                    employeeLink.innerText = `${emp['first name']} ${emp['last name']}`;
+                    // Set the link href to the edit employee page
+                    employeeLink.href = "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/editEmployee.html";
+                    // Add click event listener to store employee data in session storage
+                    employeeLink.addEventListener("click", () => {
+                        sessionStorage.setItem("employeeData", JSON.stringify(emp));
+                    });
+                    // Append the link to the employee row
+                    employeeRow.appendChild(employeeLink);
+                    // Append the employee row to the employees list cell
+                    employeesList.appendChild(employeeRow);
+                });
+
+                // Append cells to the row
+                newTr.appendChild(name);
+                newTr.appendChild(manager);
+                newTr.appendChild(employeesList);
+
+                // Append the row to the table body
+                departmentsTable.appendChild(newTr);
+            });
+        }
+
+        // Function to navigate to the add department page
+        function add() {
+            window.location.href = "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/addDepartment.html";
+        }
+    </script>
+</body>
+
+</html>

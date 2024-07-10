@@ -1,0 +1,53 @@
+<html>
+
+<head>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" type="text/css" href="../css/editDepartment.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="form-container">
+            <form>
+                <!-- Input field for the department name -->
+                Name: <input id="name" type="text" /><br />
+            </form>
+            <!-- Buttons for add and cancel actions -->
+            <button type="button" onclick="add()">ADD</button>
+            <button type="button" onclick="cancel()">CANCEL</button>
+        </div>
+    </div>
+    
+    <script>
+        async function add() {
+            const id = ({ id: sessionStorage["id"] });
+            const response = await fetch(`http://localhost:8000/actions/${id.id}`);
+            const data = await response.json();
+            if (response.status == 200) {
+                const newName = document.getElementById("name").value;
+                let newItem = JSON.stringify({ name: newName, manager: "Not assigned" });
+                
+                // Add new department
+                const response2 = await fetch(`http://localhost:8000/departments`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: newItem
+                });
+                if (response2.status === 400) {
+                    alert("Please enter a valid name");
+                }
+                if (response2.status === 200) {
+                    window.location.href = sessionStorage.getItem("window.location");
+                }
+            } else {
+                alert(data);
+            }
+        }
+
+        function cancel() {
+            window.location.href = sessionStorage.getItem("window.location");
+        }
+    </script>
+</body>
+
+</html>

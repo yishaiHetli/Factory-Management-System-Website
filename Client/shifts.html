@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" type="text/css" href="../css/shifts.css">
+</head>
+
+<body onload="checkUctions()">
+    <!-- Table to display shifts and assigned employees -->
+    <table id="tbl">
+        <thead>
+            <tr>
+                <th>Shifts</th>
+                <th>Employees</th>
+                <th>Assign Employee</th>
+            </tr>
+        </thead>
+        <tbody id="tblBody">
+            <!-- Table body will be populated dynamically -->
+        </tbody>
+    </table>
+    <!-- Button to update assignments -->
+    <button style="margin-left: 153px;" onclick="update()">UPDATE</button>
+    <script>
+        // Function to check some conditions and fetch data accordingly
+        async function checkUctions() {
+            const body = JSON.stringify({ id: sessionStorage["id"] });
+            // Check if the current page is not shifts.html so the action will not be counted if so
+            if (sessionStorage.getItem("window.location") !== '///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/shifts.html') {
+                const id = ({ id: sessionStorage["id"] });
+                // Fetch actions data based on the session id
+                const response = await fetch(`http://localhost:8000/actions/${id.id}`);
+                const data = await response.json();
+                // If response is successful, call getData to fetch and display shifts data
+                if (response.status == 200) {
+                    getData();
+                } else {
+                    alert(data);
+                }
+            } else {
+                // If the current page is shifts.html, directly call getData
+                getData();
+            }
+        }
+
+        // Function to fetch and display shifts data
+        async function getData() {
+            // Fetch data from employees, assignments, and shifts endpoints
+            const empResponse = await fetch("http://localhost:8000/employees");
+            const assignResponce = await fetch("http://localhost:8000/assignments");
+            const shifResponce = await fetch("http://localhost:8000/shifts");
+            const employees = await empResponse.json();
+            const shiftsList = await shifResponce.json();
+            const assignments = await assignResponce.json();
+            const shiftsTable = document.getElementById("tblBody");
+            let update = [];
+
+            // Iterate over each shift
+            shiftsList.forEach(shift => {
+                // Create new table row and cells for shift name, employees, and assign employee
+                const newTr = document.createElement("tr");
+                const name = document.createElement("td");
+                const employeesTd = document.createElement("td");
+                const shiftTd = document.createElement("td");
+                const link = document.createElement("a");
+                const assignedEmployees = assignments.filter((assignment) => assignment.shiftId == shift._id);
+
+                // Iterate over each assignment for the current shift
+                assignedEmployees.forEach(assignment => {
+                    const employeeRow = document.createElement("div");
+                    employeeRow.innerText = assignment.employeeName;
+                    employeesTd.appendChild(employeeRow);
+                });
+
+                // Add click event listener to store shift data in session storage
+                link.addEventListener("click", () => {
+                    sessionStorage.setItem("shiftData", JSON.stringify(shift));
+                });
+                // Set the link href to the edit shift page
+                link.href = "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/editShift.html";
+                sessionStorage.setItem("window.location", "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/employees.html");
+                const shiftStart = shift["starting hour"];
+                const shiftEnd = shift["ending hour"];
+                link.innerText = `${shiftStart}-${shiftEnd}`;
+                name.appendChild(link);
+
+                const notAssignedEmployees = assignments.filter((assignment) => assignment.shiftId !== shift._id);
+                const tblBody2Container = document.createElement("div");
+                tblBody2Container.classList.add("scrollable-tblBody2-container");
+                const tblBody2 = document.createElement("table");
+                tblBody2.classList.add("scrollable-tblBody2");
+
+                // Iterate over each not assigned employee
+                notAssignedEmployees?.forEach(assignment => {
+                    const newTr = document.createElement("tr");
+                    const nameTd = document.createElement("td");
+                    nameTd.innerText = assignment.employeeName;
+                    const addButton = document.createElement("button");
+                    addButton.classList.add("add-button");
+                    addButton.innerText = "ADD";
+                    addButton._id = assignment.employeeId;
+
+                    // Add click event listener to add or cancel employee assignment
+                    addButton.onclick = (event) => {
+                        event.preventDefault();
+                        if (addButton.innerText == 'ADD') {
+                            if (!update.find(obj => obj.employee == assignment.employeeId)) {
+                                update.push({ shift: shift._id, employee: assignment.employeeId });
+                                sessionStorage.setItem("update", JSON.stringify(update));
+                                addButton.innerText = 'CANCEL';
+                            }
+                            else {
+                                alert("this employee was alrady chosen by another depatment")
+                            }
+                        } else {
+                            update.pop({ shift: shift._id, emp: assignment.employeeId });
+                            sessionStorage.setItem("update", JSON.stringify(update));
+                            addButton.innerText = 'ADD';
+                        }
+                    }
+                    const addTd = document.createElement("td");
+                    addTd.appendChild(addButton);
+                    newTr.appendChild(nameTd);
+                    newTr.appendChild(addTd);
+                    tblBody2.appendChild(newTr);
+                });
+                tblBody2Container.appendChild(tblBody2);
+                shiftTd.appendChild(tblBody2Container);
+                newTr.appendChild(name);
+                newTr.appendChild(employeesTd);
+                newTr.appendChild(shiftTd);
+                shiftsTable.appendChild(newTr);
+            });
+        }
+
+        // Function to update employee assignments
+        async function update() {
+            const body = JSON.stringify({ id: sessionStorage["id"] });
+            const response = await fetch("http://localhost:8000/actions", {
+                method: "GET",
+                headers: { "Content-Type": "application/json", "id": sessionStorage["id"] },
+            });
+            const data = await response.json();
+            // If response is successful, update employee assignments
+            if (response.status == 200) {
+                const employeesUpdate = sessionStorage.getItem("update");
+                JSON.parse(employeesUpdate)?.forEach(async employee => {
+                    let newItem = JSON.stringify({ employeeId: employee.employee, shiftId: employee.shift });
+                    const resp = await fetch(`http://localhost:8000/assignments/${employee.employee}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: newItem
+                    });
+                    const data2 = await resp.json();
+                });
+
+                // Reload the page after a short delay
+                setTimeout(function () {
+                    window.location.href = "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/shifts.html";
+                }, 10);
+            } else {
+                alert(data);
+            }
+        }
+
+        // Function to navigate to the add employee page
+        function add() {
+            window.location.href = "file:///C:/Users/OWNER/Desktop/React/nodeJsFinalProject/Client/addEmployee.html";
+        }
+    </script>
+</body>
+
+</html>

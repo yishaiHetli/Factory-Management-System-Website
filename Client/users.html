@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" type="text/css" href="../css/users.css">
+</head>
+
+<body>
+    <h1>Actions Table</h1>
+    <table id="actionsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Max Actions Per Day</th>
+                <th>Recent Activity</th>
+                <th>Actions Remain</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Table rows will be added here dynamically -->
+        </tbody>
+    </table>
+
+    <script>
+        async function fetchData() {
+            const response = await fetch('http://localhost:8000/actions');
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            const data = await response.json();
+            populateTable(data.sort((a, b) => a.id - b.id));
+        }
+
+        function populateTable(actions) {
+            const tableBody = document.getElementById('actionsTable').getElementsByTagName('tbody')[0];
+            actions.forEach(action => {
+                const row = document.createElement('tr');
+
+                const idCell = document.createElement('td');
+                idCell.textContent = action.id;
+                row.appendChild(idCell);
+
+                const maxActionsCell = document.createElement('td');
+                maxActionsCell.textContent = action.maxActions;
+                row.appendChild(maxActionsCell);
+
+                const dateCell = document.createElement('td');
+                dateCell.textContent = action.date;
+                row.appendChild(dateCell);
+
+                const actionsAllowedCell = document.createElement('td');
+                actionsAllowedCell.textContent = action.actionsAllowd;
+                row.appendChild(actionsAllowedCell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Fetch data when the page loads
+        window.onload = fetchData;
+    </script>
+</body>
+
+</html>
