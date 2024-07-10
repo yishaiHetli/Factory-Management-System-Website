@@ -1,0 +1,8 @@
+# Treat .html files as HTML
+*.html linguist-language=HTML
+
+# Treat .js files as JavaScript
+*.js linguist-language=JavaScript
+
+# Detect JavaScript within HTML files
+*.html linguist-detectable=true
